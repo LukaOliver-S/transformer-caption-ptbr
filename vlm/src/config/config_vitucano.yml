@@ -1,0 +1,71 @@
+##########################################################
+# ViTucano-only configuration for train_vitucano.py
+# (LoRA, no quantization; precision is chosen automatically
+#  from the GPU: bf16 if supported, otherwise fp16)
+##########################################################
+
+config:
+  model_name: "vitucano-1b"
+  dataset: "flickr30k_pt"
+  push_to_hub: False
+  dataset_from_hub: True
+  interval_strategy: "steps"
+  monitoring_steps: 200
+  turn_off_computer: False
+  use_adapters: True # saves under models/vitucano-1b-ft/...
+  # Subsets for quick tests (null = use everything). Can be overridden by CLI flags.
+  train_images: null
+  test_images: null
+
+generate_args:
+  max_new_tokens: "auto" # set from the dataset max_length
+
+mllm:
+  vitucano-1b:
+    id: "TucanoBR/ViTucano-1b5-v1"
+    batch_size: 1
+    use_flash_attention: False
+    question: "Escreva uma descrição em português do Brasil para a imagem com no máximo {max_length} palavras."
+    qlora_args:
+      use_lora: True
+      lora_rank: 16
+      alpha_to_rank_ratio: 2.0
+      dropout: 0.0
+      lora_all_linear: False
+      linear_modules: ['q_proj', 'o_proj', 'k_proj', 'v_proj', 'gate_proj', 'up_proj', 'down_proj']
+    training_args:
+      num_train_epochs: 1
+      do_eval: False
+      gradient_accumulation_steps: 4
+      gradient_checkpointing: True
+      gradient_checkpointing_kwargs:
+        use_reentrant: False
+      save_total_limit: 1
+      weight_decay: 1.0e-6
+      optim: "adamw_torch"
+      learning_rate: 1.0e-4 # LoRA rate (the full fine-tuning config used 1e-5)
+      load_best_model_at_end: False
+      push_to_hub: False
+      remove_unused_columns: False
+      dataloader_pin_memory: False
+      predict_with_generate: True
+
+dataset:
+  flickr30k_pt:
+    id: "laicsiifes/flickr30k-pt-br-5k"
+    max_length: 25
+    image_column: "image"
+    text_column: "caption"
+    text_per_image: 5
+  flickr30k_pt_human_generated:
+    id: "laicsiifes/flickr30k-pt-br-5k-human-generated"
+    max_length: 25
+    image_column: "image"
+    text_column: "caption"
+    text_per_image: 5
+  pracegover_63k:
+    id: "laicsiifes/pracegover63k-5k"
+    max_length: 70
+    image_column: "image"
+    text_column: "text"
+    text_per_image: 1
