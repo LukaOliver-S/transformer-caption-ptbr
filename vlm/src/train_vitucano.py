@@ -26,11 +26,11 @@ import torch
 import wandb
 import pandas as pd
 
-from peft import get_peft_model
+from peft import get_peft_model, prepare_model_for_kbit_training
 from pprint import pprint
 from dotenv import load_dotenv
 from huggingface_hub import login
-from transformers import AutoModelForCausalLM, AutoTokenizer, Seq2SeqTrainer, Seq2SeqTrainingArguments
+from transformers import AutoModelForCausalLM, AutoTokenizer, Seq2SeqTrainer, Seq2SeqTrainingArguments,BitsAndBytesConfig, set_seed
 
 from config.config import config_vars, create_lora_config, ViTucanoProcessor
 from data_prep.data_processing import load_datasets, preprocess, transform_datasets
@@ -44,15 +44,21 @@ def bf16_supported():
     return torch.cuda.is_available() and torch.cuda.get_device_capability()[0] >= 8
 
 
-def load_vitucano(model_id, use_flash_attention=False):
+def load_vitucano(model_id, use_flash_attention=False,use_bnb = False):
     """Load ViTucano and its processor, in bf16 or fp16 depending on the GPU."""
     dtype = torch.bfloat16 if bf16_supported() else torch.float16
-
+    bnb_config = BitsAndBytesConfig(
+        load_in_4bit=True,
+        bnb_4bit_quant_storage="nf4",
+        bnb_4bit_compute_dtype=dtype, #fp16 on specific GPUs
+    )
     model = AutoModelForCausalLM.from_pretrained(
         model_id,
         torch_dtype=dtype,
         trust_remote_code=True,
         _attn_implementation='flash_attention_2' if use_flash_attention else 'eager',
+        quantization_config = bnb_config,
+        device_map={"":0} if use_bnb else None,
     )
     processor = ViTucanoProcessor(
         image_processor=model.vision_tower._image_processor,
@@ -73,7 +79,7 @@ def parse_args():
 
 def main():
     args = parse_args()
-
+   
     load_dotenv(dotenv_path="../.env")
     if os.getenv("HF_API_KEY"):
         login(os.getenv("HF_API_KEY"))
@@ -106,9 +112,17 @@ def main():
     pprint({k: config[k] for k in ["model_id", "dataset", "push_to_hub", "monitoring_steps"]})
 
     os.makedirs(config["results_dir"], exist_ok=True)
+    
+    set_seed(config.get("seed",42))
 
     # 1. Model + LoRA
-    model, processor = load_vitucano(config["model_id"], config["use_flash_attention"])
+    use_bnb = qlora_args.get("use_bnb",False)
+    model, processor = load_vitucano(config["model_id"], config["use_flash_attention"],use_bnb)
+    if use_bnb:
+        model = prepare_model_for_kbit_training(
+            model,use_gradient_checkpointing = True,
+            gradient_checkpoiting_kwargs = {"use_reetrant":False},
+        )
 
     model = get_peft_model(model, create_lora_config(
         model_id=config["model_id"],

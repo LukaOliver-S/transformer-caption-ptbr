@@ -5,7 +5,8 @@
 ##########################################################
 
 config:
-  model_name: "vitucano-1b"
+  model_name: "vitucano-1b-qlora"
+  seed: 42
   dataset: "flickr30k_pt"
   push_to_hub: False
   dataset_from_hub: True
@@ -27,7 +28,7 @@ mllm:
     use_flash_attention: False
     question: "Escreva uma descrição em português do Brasil para a imagem com no máximo {max_length} palavras."
     qlora_args:
-      use_bnb: False
+      use_bnb: True 
       use_lora: True
       lora_rank: 16
       alpha_to_rank_ratio: 2.0
@@ -35,6 +36,8 @@ mllm:
       lora_all_linear: False
       linear_modules: ['q_proj', 'o_proj', 'k_proj', 'v_proj', 'gate_proj', 'up_proj', 'down_proj']
     training_args:
+      seed: 42
+      data_seed: 42
       num_train_epochs: 1
       do_eval: False
       gradient_accumulation_steps: 4
