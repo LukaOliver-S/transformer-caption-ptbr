@@ -1,0 +1,1 @@
+{"nodes": [{"id": "$graphify-root$_model_as_evaluator_llm_as_evaluator_clair_template_py", "label": "clair_template.py", "file_type": "code", "source_file": "model_as_evaluator/llm_as_evaluator/clair_template.py", "source_location": "L1"}], "edges": [], "raw_calls": []}
