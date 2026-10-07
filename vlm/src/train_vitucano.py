@@ -51,6 +51,9 @@ def load_vitucano(model_id, use_flash_attention=False,use_bnb = False):
         load_in_4bit=True,
         bnb_4bit_quant_type="nf4",
         bnb_4bit_compute_dtype=dtype, #fp16 on specific GPUs
+        # SigLIP's pooling head uses nn.MultiheadAttention, which reads out_proj.weight directly
+        # and breaks on a packed 4-bit weight, so the vision side stays unquantized.
+        llm_int8_skip_modules=["vision_tower", "connector"],
     )
     model = AutoModelForCausalLM.from_pretrained(
         model_id,
