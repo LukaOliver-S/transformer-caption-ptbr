@@ -49,7 +49,7 @@ def load_vitucano(model_id, use_flash_attention=False,use_bnb = False):
     dtype = torch.bfloat16 if bf16_supported() else torch.float16
     bnb_config = BitsAndBytesConfig(
         load_in_4bit=True,
-        bnb_4bit_quant_storage="nf4",
+        bnb_4bit_quant_type="nf4",
         bnb_4bit_compute_dtype=dtype, #fp16 on specific GPUs
     )
     model = AutoModelForCausalLM.from_pretrained(
