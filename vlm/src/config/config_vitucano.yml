@@ -6,6 +6,7 @@
 
 config:
   model_name: "vitucano-1b"
+  seed: 42
   dataset: "flickr30k_pt"
   push_to_hub: False
   dataset_from_hub: True
@@ -35,6 +36,8 @@ mllm:
       lora_all_linear: False
       linear_modules: ['q_proj', 'o_proj', 'k_proj', 'v_proj', 'gate_proj', 'up_proj', 'down_proj']
     training_args:
+      seed: 42
+      data_seed: 42
       num_train_epochs: 1
       do_eval: False
       gradient_accumulation_steps: 4

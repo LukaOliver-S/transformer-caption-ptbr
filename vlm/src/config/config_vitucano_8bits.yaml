@@ -1,6 +1,7 @@
 ##########################################################
 # ViTucano-only configuration for train_vitucano.py
-# (LoRA, no quantization; precision is chosen automatically
+# (QLoRA: 4-bit NF4 base model via bitsandbytes, `use_bnb: True`;
+#  despite the file name this is NOT 8-bit. Precision is chosen automatically
 #  from the GPU: bf16 if supported, otherwise fp16)
 ##########################################################
 
@@ -13,7 +14,7 @@ config:
   interval_strategy: "steps"
   monitoring_steps: 200
   turn_off_computer: False
-  use_adapters: True # saves under models/vitucano-1b-ft/...
+  use_adapters: True # saves under models/vitucano-1b-qlora-ft/...
   # Subsets for quick tests (null = use everything). Can be overridden by CLI flags.
   train_images: null
   test_images: null
