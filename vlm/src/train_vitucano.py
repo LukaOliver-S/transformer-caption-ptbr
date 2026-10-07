@@ -181,7 +181,8 @@ def main():
     # 3. Train (resumes from the last checkpoint if output_dir already has one)
     trainer = Seq2SeqTrainer(
         model=model,
-        args=Seq2SeqTrainingArguments(**training_args),
+        # wandb is the only logger used here; the default "all" also pulls in tensorboard
+        args=Seq2SeqTrainingArguments(**{"report_to": "wandb", **training_args}),
         compute_metrics=compute_metrics(processor=processor, model_id=config["model_id"]),
         data_collator=DataCollatorForTraining(**kwargs_collator),
         train_dataset=train_dataset,
