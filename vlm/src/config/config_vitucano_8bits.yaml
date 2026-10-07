@@ -22,7 +22,7 @@ generate_args:
   max_new_tokens: "auto" # set from the dataset max_length
 
 mllm:
-  vitucano-1b:
+  vitucano-1b-qlora:
     id: "TucanoBR/ViTucano-1b5-v1"
     batch_size: 1
     use_flash_attention: False
