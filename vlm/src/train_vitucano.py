@@ -47,13 +47,17 @@ def bf16_supported():
 def load_vitucano(model_id, use_flash_attention=False,use_bnb = False):
     """Load ViTucano and its processor, in bf16 or fp16 depending on the GPU."""
     dtype = torch.bfloat16 if bf16_supported() else torch.float16
-    bnb_config = BitsAndBytesConfig(
-        load_in_4bit=True,
-        bnb_4bit_quant_type="nf4",
-        bnb_4bit_compute_dtype=dtype, #fp16 on specific GPUs
-        # SigLIP's pooling head uses nn.MultiheadAttention, which reads out_proj.weight directly
-        # and breaks on a packed 4-bit weight, so the vision side stays unquantized.
-        llm_int8_skip_modules=["vision_tower", "connector"],
+    bnb_config = (
+        BitsAndBytesConfig(
+            load_in_4bit=True,
+            bnb_4bit_quant_type="nf4",
+            bnb_4bit_compute_dtype=dtype, #fp16 on specific GPUs
+            # SigLIP's pooling head uses nn.MultiheadAttention, which reads out_proj.weight
+            # directly and breaks on a packed 4-bit weight, so the vision side stays unquantized.
+            llm_int8_skip_modules=["vision_tower", "connector"],
+        )
+        if use_bnb
+        else None
     )
     model = AutoModelForCausalLM.from_pretrained(
         model_id,
@@ -124,7 +128,7 @@ def main():
     if use_bnb:
         model = prepare_model_for_kbit_training(
             model,use_gradient_checkpointing = True,
-            gradient_checkpoiting_kwargs = {"use_reetrant":False},
+            gradient_checkpointing_kwargs = {"use_reentrant":False},
         )
 
     model = get_peft_model(model, create_lora_config(
